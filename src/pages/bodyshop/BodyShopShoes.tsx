@@ -1,0 +1,33 @@
+import { Link } from "react-router-dom";
+import CategoryPage from "@/components/bodyshop/CategoryPage";
+import { SHOES } from "@/data/bodyshopProducts";
+
+const FILTERS = ["All", "Heels", "Flats", "Boots", "Sandals", "Sneakers"];
+
+const hero = (
+  <section
+    className="flex flex-col items-center justify-center gap-4"
+    style={{
+      height: "220px",
+      background: "linear-gradient(180deg, #E8A0A0 0%, #D4878F 50%, #C4747E 100%)",
+    }}
+  >
+    <h1
+      className="font-serif font-light text-white tracking-[0.3em] md:tracking-[0.75em]"
+      style={{ fontSize: "clamp(28px, 10vw, 64px)" }}
+    >
+      SHOES
+    </h1>
+    <nav className="flex items-center gap-2 font-sans" style={{ fontSize: "12px" }}>
+      <Link to="/the-body-shop" className="text-white/60 hover:text-white transition">
+        Home
+      </Link>
+      <span className="text-white/40">&gt;</span>
+      <span className="text-white">Shoes</span>
+    </nav>
+  </section>
+);
+
+export default function BodyShopShoes() {
+  return <CategoryPage hero={hero} filters={FILTERS} products={SHOES} />;
+}

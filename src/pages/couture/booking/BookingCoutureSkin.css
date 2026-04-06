@@ -1,0 +1,93 @@
+/* ── Couture skin overrides for the booking-system module ────────────────────
+   These CSS custom properties override the defaults set in Booking.css,
+   applying the Kootis Couture gold/ivory palette.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.couture-booking-wrapper {
+  /* Colour tokens */
+  --booking-accent:         #B8972E;
+  --booking-accent-hover:   #8B6914;
+  --booking-accent-light:   #FAF8F3;
+  --booking-accent-border:  #C9A96E;
+  --booking-text:           #2C2C2C;
+  --booking-text-muted:     #888888;
+  --booking-bg:             #FFFFFF;
+  --booking-bg-alt:         #FAF8F3;
+  --booking-border:         #E5E0D8;
+  --booking-error:          #C0392B;
+  --booking-success:        #4CAF50;
+
+  /* Typography */
+  --booking-font-sans:      'Outfit', 'Inter', sans-serif;
+  --booking-font-serif:     'Cormorant Garamond', Georgia, serif;
+
+  font-family: var(--booking-font-sans);
+}
+
+/* Progress step indicators — gold active */
+.couture-booking-wrapper .booking-step-active {
+  background-color: var(--booking-accent) !important;
+  border-color: var(--booking-accent) !important;
+  color: #fff !important;
+}
+
+.couture-booking-wrapper .booking-step-completed {
+  background-color: var(--booking-accent) !important;
+  border-color: var(--booking-accent) !important;
+}
+
+/* Primary buttons */
+.couture-booking-wrapper .booking-btn-primary {
+  background-color: var(--booking-accent) !important;
+  border-color: var(--booking-accent) !important;
+  font-family: var(--booking-font-sans) !important;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.couture-booking-wrapper .booking-btn-primary:hover {
+  background-color: var(--booking-accent-hover) !important;
+  border-color: var(--booking-accent-hover) !important;
+}
+
+/* Selected service / time-slot cards */
+.couture-booking-wrapper .booking-card-selected,
+.couture-booking-wrapper .booking-slot-selected {
+  border-color: var(--booking-accent) !important;
+  background-color: var(--booking-accent-light) !important;
+}
+
+/* Calendar selected day */
+.couture-booking-wrapper .booking-day-selected {
+  background-color: var(--booking-accent) !important;
+  color: #fff !important;
+}
+
+.couture-booking-wrapper .booking-day-today {
+  border-color: var(--booking-accent) !important;
+  color: var(--booking-accent) !important;
+}
+
+/* Headings use serif font */
+.couture-booking-wrapper h1,
+.couture-booking-wrapper h2,
+.couture-booking-wrapper .booking-section-title {
+  font-family: var(--booking-font-serif) !important;
+  font-style: italic;
+  color: var(--booking-text) !important;
+}
+
+/* Page background */
+.couture-booking-wrapper {
+  background-color: var(--booking-bg-alt);
+  min-height: 60vh;
+}
+
+/* Remove duplicate header/footer that Booking.jsx may render */
+.couture-booking-wrapper header,
+.couture-booking-wrapper footer,
+.couture-booking-wrapper nav.booking-nav {
+  display: none !important;
+}
