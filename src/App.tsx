@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 // Landing
 import LandingPage from "@/pages/landing/LandingPage";
+import ComingSoon from "@/pages/landing/ComingSoon";
+
+const COMING_SOON = import.meta.env.VITE_COMING_SOON === "true";
 
 // Couture pages
 import CoutureLayout from "@/pages/couture/CoutureLayout";
@@ -48,7 +51,7 @@ export default function App() {
   return (
     <Routes>
       {/* ── Landing ── */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={COMING_SOON ? <ComingSoon /> : <LandingPage />} />
 
       {/* ── Kootis Couture ── */}
       <Route path="/kootis-couture" element={<CoutureLayout />}>
