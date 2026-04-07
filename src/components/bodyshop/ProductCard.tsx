@@ -12,6 +12,11 @@ export interface Product {
   image: string;
   badge?: "NEW" | "SALE";
   discountPct?: number;
+  sizes?: string[];
+  colors?: { name: string; hex: string }[];
+  productDetails?: string;
+  shippingReturns?: string;
+  careInstructions?: string;
 }
 
 export default function ProductCard({ product }: { product: Product }) {

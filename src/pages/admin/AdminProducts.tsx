@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, X, Upload, Loader2, ToggleLeft, ToggleRight } fro
 import { supabase } from "@/lib/supabase";
 import { adminFetch } from "@/lib/adminFetch";
 
-interface Product {
+interface AdminProduct {
   id: string;
   slug: string;
   name: string;
@@ -16,11 +16,20 @@ interface Product {
   discount_pct: number | null;
   in_stock: boolean;
   featured: boolean;
+  sizes: string[];
+  colors: { name: string; hex: string }[];
+  product_details: string | null;
+  shipping_returns: string | null;
+  care_instructions: string | null;
 }
+
+const SHOE_CATEGORIES = ["Heels", "Flats", "Boots", "Sandals", "Sneakers"];
 
 const EMPTY_FORM = {
   name: "", slug: "", category: "", price: "", sale_price: "", original_price: "",
   badge: "", discount_pct: "", in_stock: true, featured: false,
+  sizes: [] as string[], colors: [] as { name: string; hex: string }[],
+  product_details: "", shipping_returns: "", care_instructions: "",
 };
 
 const CATEGORIES = [
@@ -46,10 +55,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const inputClass = "h-10 px-3 bg-white/5 border border-white/10 rounded-lg font-sans text-white placeholder:text-white/20 focus:outline-none focus:border-[#C9A96E] transition text-[13px]";
 
 export default function AdminProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [editProduct, setEditProduct] = useState<AdminProduct | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -81,7 +90,7 @@ export default function AdminProducts() {
     setModalOpen(true);
   }
 
-  function openEdit(p: Product) {
+  function openEdit(p: AdminProduct) {
     setEditProduct(p);
     setForm({
       name: p.name, slug: p.slug, category: p.category,
@@ -89,6 +98,10 @@ export default function AdminProducts() {
       original_price: p.original_price ? String(p.original_price) : "",
       badge: p.badge ?? "", discount_pct: p.discount_pct ? String(p.discount_pct) : "",
       in_stock: p.in_stock, featured: p.featured,
+      sizes: p.sizes ?? [], colors: p.colors ?? [],
+      product_details: p.product_details ?? "",
+      shipping_returns: p.shipping_returns ?? "",
+      care_instructions: p.care_instructions ?? "",
     });
     setImagePreview(p.images?.[0] ?? "");
     setImageFile(null);
@@ -134,6 +147,11 @@ export default function AdminProducts() {
         in_stock: form.in_stock,
         featured: form.featured,
         image: imageUrl,
+        sizes: form.sizes,
+        colors: form.colors,
+        product_details: form.product_details || null,
+        shipping_returns: form.shipping_returns || null,
+        care_instructions: form.care_instructions || null,
         id: editProduct?.id,
       };
 
@@ -158,7 +176,7 @@ export default function AdminProducts() {
     fetchProducts();
   }
 
-  async function toggleStock(p: Product) {
+  async function toggleStock(p: AdminProduct) {
     await adminFetch("/api/admin/products", {
       method: "PUT",
       body: JSON.stringify({ id: p.id, in_stock: !p.in_stock }),
@@ -358,6 +376,80 @@ export default function AdminProducts() {
                   <input className={inputClass} type="number" value={form.discount_pct} onChange={(e) => setForm(f => ({ ...f, discount_pct: e.target.value }))} placeholder="25" />
                 </Field>
               </div>
+
+              {/* Sizes — shoes only */}
+              {SHOE_CATEGORIES.includes(form.category) && (
+                <Field label="Sizes (comma separated, e.g. 35,36,37,38,39,40)">
+                  <input
+                    className={inputClass}
+                    value={form.sizes.join(",")}
+                    onChange={(e) => setForm(f => ({ ...f, sizes: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))}
+                    placeholder="35,36,37,38,39,40,41"
+                  />
+                </Field>
+              )}
+
+              {/* Colors */}
+              <Field label="Colors">
+                <div className="flex flex-col gap-2">
+                  {form.colors.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={c.hex}
+                        onChange={(e) => setForm(f => { const cols = [...f.colors]; cols[i] = { ...cols[i], hex: e.target.value }; return { ...f, colors: cols }; })}
+                        className="w-9 h-9 rounded cursor-pointer border border-white/10 bg-transparent"
+                      />
+                      <input
+                        className={inputClass + " flex-1"}
+                        value={c.name}
+                        onChange={(e) => setForm(f => { const cols = [...f.colors]; cols[i] = { ...cols[i], name: e.target.value }; return { ...f, colors: cols }; })}
+                        placeholder="Color name"
+                      />
+                      <button type="button" onClick={() => setForm(f => ({ ...f, colors: f.colors.filter((_, j) => j !== i) }))} className="text-white/30 hover:text-red-400 transition">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, colors: [...f.colors, { name: "", hex: "#C9A96E" }] }))}
+                    className="text-left font-sans text-[#C9A96E] hover:text-white transition"
+                    style={{ fontSize: "12px" }}
+                  >
+                    + Add color
+                  </button>
+                </div>
+              </Field>
+
+              {/* Text areas */}
+              <Field label="Product Details">
+                <textarea
+                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg font-sans text-white placeholder:text-white/20 focus:outline-none focus:border-[#C9A96E] transition text-[13px] resize-none"
+                  rows={3}
+                  value={form.product_details}
+                  onChange={(e) => setForm(f => ({ ...f, product_details: e.target.value }))}
+                  placeholder="Describe the product materials, dimensions, etc."
+                />
+              </Field>
+              <Field label="Shipping & Returns">
+                <textarea
+                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg font-sans text-white placeholder:text-white/20 focus:outline-none focus:border-[#C9A96E] transition text-[13px] resize-none"
+                  rows={3}
+                  value={form.shipping_returns}
+                  onChange={(e) => setForm(f => ({ ...f, shipping_returns: e.target.value }))}
+                  placeholder="Delivery times, return policy, etc."
+                />
+              </Field>
+              <Field label="Care Instructions">
+                <textarea
+                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg font-sans text-white placeholder:text-white/20 focus:outline-none focus:border-[#C9A96E] transition text-[13px] resize-none"
+                  rows={3}
+                  value={form.care_instructions}
+                  onChange={(e) => setForm(f => ({ ...f, care_instructions: e.target.value }))}
+                  placeholder="How to clean and store the product."
+                />
+              </Field>
 
               {/* Toggles */}
               <div className="flex items-center gap-6">

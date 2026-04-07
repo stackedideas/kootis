@@ -12,7 +12,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "GET") {
     const rows = await sql`
       SELECT id, slug, name, category, price, sale_price, original_price,
-             images, badge, discount_pct, in_stock, featured, created_at
+             images, badge, discount_pct, in_stock, featured,
+             sizes, colors, product_details, shipping_returns, care_instructions,
+             created_at
       FROM products
       ORDER BY created_at DESC
     `;
@@ -21,16 +23,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // POST — create product
   if (req.method === "POST") {
-    const { name, slug, category, price, sale_price, original_price, badge, discount_pct, in_stock, featured, image } = req.body;
+    const { name, slug, category, price, sale_price, original_price, badge, discount_pct, in_stock, featured, image, sizes, colors, product_details, shipping_returns, care_instructions } = req.body;
 
     const [row] = await sql`
-      INSERT INTO products (name, slug, category, price, sale_price, original_price, badge, discount_pct, in_stock, featured, images)
+      INSERT INTO products (name, slug, category, price, sale_price, original_price, badge, discount_pct, in_stock, featured, images, sizes, colors, product_details, shipping_returns, care_instructions)
       VALUES (
         ${name}, ${slug}, ${category}, ${price},
         ${sale_price ?? null}, ${original_price ?? null},
         ${badge ?? null}, ${discount_pct ?? null},
         ${in_stock ?? true}, ${featured ?? false},
-        ${image ? [image] : []}
+        ${image ? [image] : []},
+        ${sizes ?? []}, ${JSON.stringify(colors ?? [])},
+        ${product_details ?? null}, ${shipping_returns ?? null}, ${care_instructions ?? null}
       )
       RETURNING id
     `;
@@ -44,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Build dynamic update — only set fields that were sent
     const updates: Record<string, unknown> = {};
-    const allowed = ["name", "slug", "category", "price", "sale_price", "original_price", "badge", "discount_pct", "in_stock", "featured", "image"];
+    const allowed = ["name", "slug", "category", "price", "sale_price", "original_price", "badge", "discount_pct", "in_stock", "featured", "image", "sizes", "colors", "product_details", "shipping_returns", "care_instructions"];
     for (const key of allowed) {
       if (key in fields) updates[key] = fields[key];
     }
@@ -57,7 +61,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (const [key, val] of Object.entries(updates)) {
       values.push(key === "image" ? [val] : val); // wrap image in array for images column
-      const colName = key === "image" ? "images" : key;
+      let colName = key === "image" ? "images" : key;
+      if (key === "colors") values[values.length - 1] = JSON.stringify(val);
       setClauses.push(`${colName} = $${values.length}`);
     }
 

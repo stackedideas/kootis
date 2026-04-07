@@ -3,15 +3,11 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { ShoppingBag, Heart, Star, ChevronDown, ChevronUp, Truck, RefreshCw, ShieldCheck } from "lucide-react";
 import ProductCard from "@/components/bodyshop/ProductCard";
 import { ALL_PRODUCTS } from "@/data/bodyshopProducts";
+import { useProduct, useProducts } from "@/hooks/useProducts";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
 
-const SIZES = ["35", "36", "37", "38", "39", "40", "41"];
-const COLORS = [
-  { name: "Nude Gold", hex: "#C9A96E" },
-  { name: "Black", hex: "#333333" },
-  { name: "Blush", hex: "#E8A0A0" },
-];
+const SHOE_CATEGORIES = ["Heels", "Flats", "Boots", "Sandals", "Sneakers"];
 
 // Accordion item
 function AccordionItem({ title, children }: { title: string; children: React.ReactNode }) {
@@ -37,27 +33,38 @@ function AccordionItem({ title, children }: { title: string; children: React.Rea
 
 export default function BodyShopProductDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const { product: dbProduct, loading } = useProduct(slug ?? "");
 
-  const product = ALL_PRODUCTS.find((p) => p.slug === slug) ?? {
+  // Fall back to static data while loading or if API unavailable
+  const staticProduct = ALL_PRODUCTS.find((p) => p.slug === slug);
+  const product = dbProduct ?? staticProduct ?? {
     id: "demo",
     slug: "athena-strappy-heel",
     name: "Athena Strappy Heel",
     category: "Heels",
     price: 295,
-    image:
-      "https://images.unsplash.com/photo-1709282028322-35c1fb068ef8?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1709282028322-35c1fb068ef8?auto=format&fit=crop&w=800&q=80",
     badge: undefined,
   };
 
+  const isShoe = SHOE_CATEGORIES.includes(product.category);
+  const sizes = product.sizes?.length ? product.sizes : (isShoe ? ["35","36","37","38","39","40","41"] : []);
+  const colors = product.colors?.length ? product.colors : [
+    { name: "Nude Gold", hex: "#C9A96E" },
+    { name: "Black", hex: "#333333" },
+    { name: "Blush", hex: "#E8A0A0" },
+  ];
+
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState(COLORS[0].name);
+  const [selectedColor, setSelectedColor] = useState(colors[0]?.name ?? "");
   const [qty, setQty] = useState(1);
   const addToCart = useCartStore((s) => s.addItem);
   const { toggleItem, isWishlisted } = useWishlistStore();
   const navigate = useNavigate();
   const wishlisted = isWishlisted(product.id);
 
-  const related = ALL_PRODUCTS
+  const { products: relatedProducts } = useProducts({ category: product.category });
+  const related = (relatedProducts.length > 0 ? relatedProducts : ALL_PRODUCTS)
     .filter((p) => p.id !== product.id && p.category === product.category)
     .slice(0, 4);
 
@@ -153,63 +160,66 @@ export default function BodyShopProductDetail() {
           <div className="h-px bg-[#F0F0F0]" />
 
           {/* Description */}
-          <p
-            className="font-serif text-[#666666] leading-[1.6]"
-            style={{ fontSize: "16px" }}
-          >
-            Elevate your look with the {product.name}. Crafted from premium Italian leather with delicate gold-tone hardware, this style features a cushioned insole for all-day comfort. Perfect for weddings, galas, and special evenings.
-          </p>
+          {product.productDetails && (
+            <p className="font-serif text-[#666666] leading-[1.6]" style={{ fontSize: "16px" }}>
+              {product.productDetails}
+            </p>
+          )}
 
-          {/* Size selector */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="font-sans font-bold text-bodyshop-charcoal" style={{ fontSize: "13px" }}>
-                Size
-              </span>
-              <button className="font-sans text-bodyshop-blush underline" style={{ fontSize: "12px" }}>
-                Size Guide
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {SIZES.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSelectedSize(s)}
-                  className="w-11 h-11 font-sans font-medium transition border rounded"
-                  style={{
-                    fontSize: "13px",
-                    background: selectedSize === s ? "#E8A0A0" : "transparent",
-                    color: selectedSize === s ? "#FFFFFF" : "#555555",
-                    borderColor: selectedSize === s ? "#E8A0A0" : "#E0D5D5",
-                  }}
-                >
-                  {s}
+          {/* Size selector — shoes only */}
+          {isShoe && sizes.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="font-sans font-bold text-bodyshop-charcoal" style={{ fontSize: "13px" }}>
+                  Size
+                </span>
+                <button className="font-sans text-bodyshop-blush underline" style={{ fontSize: "12px" }}>
+                  Size Guide
                 </button>
-              ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {sizes.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSelectedSize(s)}
+                    className="w-11 h-11 font-sans font-medium transition border rounded"
+                    style={{
+                      fontSize: "13px",
+                      background: selectedSize === s ? "#E8A0A0" : "transparent",
+                      color: selectedSize === s ? "#FFFFFF" : "#555555",
+                      borderColor: selectedSize === s ? "#E8A0A0" : "#E0D5D5",
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Color selector */}
-          <div className="flex flex-col gap-3">
-            <span className="font-sans font-bold text-bodyshop-charcoal" style={{ fontSize: "13px" }}>
-              Color: {selectedColor}
-            </span>
-            <div className="flex gap-3">
-              {COLORS.map((c) => (
-                <button
-                  key={c.name}
-                  onClick={() => setSelectedColor(c.name)}
-                  title={c.name}
-                  className="w-8 h-8 rounded-full transition"
-                  style={{
-                    background: c.hex,
-                    outline: selectedColor === c.name ? `2px solid ${c.hex}` : "none",
-                    outlineOffset: "3px",
-                  }}
-                />
-              ))}
+          {colors.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <span className="font-sans font-bold text-bodyshop-charcoal" style={{ fontSize: "13px" }}>
+                Color: {selectedColor}
+              </span>
+              <div className="flex gap-3">
+                {colors.map((c) => (
+                  <button
+                    key={c.name}
+                    onClick={() => setSelectedColor(c.name)}
+                    title={c.name}
+                    className="w-8 h-8 rounded-full transition"
+                    style={{
+                      background: c.hex,
+                      outline: selectedColor === c.name ? `2px solid ${c.hex}` : "none",
+                      outlineOffset: "3px",
+                    }}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Quantity */}
           <div className="flex items-center gap-4">
@@ -299,18 +309,15 @@ export default function BodyShopProductDetail() {
           </div>
 
           {/* Accordion */}
-          <AccordionItem title="Product Details">
-            Upper: 100% premium Italian leather. Sole: Rubber. Heel height: 9 cm.
-            Lined with soft suede interior. Gold-tone hardware details. Made in Italy.
-          </AccordionItem>
-          <AccordionItem title="Shipping & Returns">
-            Standard delivery 3–5 business days. Express available at checkout.
-            Free returns within 14 days of delivery — items must be unworn and in original packaging.
-          </AccordionItem>
-          <AccordionItem title="Care Instructions">
-            Wipe clean with a soft, dry cloth. Store in the provided dust bag.
-            Avoid contact with water and direct sunlight. Do not machine wash.
-          </AccordionItem>
+          {product.productDetails && (
+            <AccordionItem title="Product Details">{product.productDetails}</AccordionItem>
+          )}
+          {product.shippingReturns && (
+            <AccordionItem title="Shipping & Returns">{product.shippingReturns}</AccordionItem>
+          )}
+          {product.careInstructions && (
+            <AccordionItem title="Care Instructions">{product.careInstructions}</AccordionItem>
+          )}
         </div>
       </div>
 

@@ -28,6 +28,11 @@ function mapRow(row: Record<string, unknown>): Product {
     image: row.image as string,
     badge: row.badge as Product["badge"],
     discountPct: row.discount_pct != null ? Number(row.discount_pct) : undefined,
+    sizes: row.sizes as string[] | undefined,
+    colors: row.colors as { name: string; hex: string }[] | undefined,
+    productDetails: row.product_details as string | undefined,
+    shippingReturns: row.shipping_returns as string | undefined,
+    careInstructions: row.care_instructions as string | undefined,
   };
 }
 

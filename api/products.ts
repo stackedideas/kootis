@@ -13,6 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         sale_price, original_price,
         images[1] AS image,
         badge, discount_pct, in_stock, featured,
+        sizes, colors, product_details, shipping_returns, care_instructions,
         created_at
       FROM products
       WHERE in_stock = true
