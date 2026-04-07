@@ -8,6 +8,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const sql = neon(process.env.DATABASE_URL!);
 
+  // GET — list all products (including out-of-stock)
+  if (req.method === "GET") {
+    const rows = await sql`
+      SELECT id, slug, name, category, price, sale_price, original_price,
+             images, badge, discount_pct, in_stock, featured, created_at
+      FROM products
+      ORDER BY created_at DESC
+    `;
+    return res.status(200).json(rows);
+  }
+
   // POST — create product
   if (req.method === "POST") {
     const { name, slug, category, price, sale_price, original_price, badge, discount_pct, in_stock, featured, image } = req.body;

@@ -62,10 +62,15 @@ export default function AdminProducts() {
 
   async function fetchProducts() {
     setLoading(true);
-    const res = await fetch("/api/products");
-    const data = await res.json();
-    setProducts(data);
-    setLoading(false);
+    try {
+      const res = await adminFetch("/api/admin/products");
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch {
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function openAdd() {
