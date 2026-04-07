@@ -16,13 +16,22 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) { navigate("/kg-admin/login", { replace: true }); return; }
-      // Check admin role via user metadata
-      const role = data.session.user.user_metadata?.role;
+    function checkSession(session: import("@supabase/supabase-js").Session | null) {
+      if (!session) { navigate("/kg-admin/login", { replace: true }); return; }
+      const role = session.user.user_metadata?.role;
       if (role !== "admin") { navigate("/kg-admin/login", { replace: true }); return; }
       setChecking(false);
+    }
+
+    // Check existing session immediately
+    supabase.auth.getSession().then(({ data }) => checkSession(data.session));
+
+    // Also listen for OAuth callback (fires after Google redirect)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) checkSession(session);
     });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   async function handleLogout() {
