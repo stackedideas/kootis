@@ -45,8 +45,12 @@ import AccountDetails from "@/pages/account/AccountDetails";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
 
-// Booking admin
-const adminSlug = import.meta.env.VITE_ADMIN_SLUG || "admin";
+// Admin panel
+import AdminLayout from "@/pages/admin/AdminLayout";
+import AdminLogin from "@/pages/admin/AdminLogin";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminProducts from "@/pages/admin/AdminProducts";
+import AdminOrders from "@/pages/admin/AdminOrders";
 
 export default function App() {
   return (
@@ -98,15 +102,13 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* ── Booking Admin (secret URL) ── */}
-      <Route
-        path={`/${adminSlug}`}
-        element={<div>Admin Login — coming soon</div>}
-      />
-      <Route
-        path={`/${adminSlug}/dashboard`}
-        element={<div>Admin Dashboard — coming soon</div>}
-      />
+      {/* ── Admin Panel ── */}
+      <Route path="/kg-admin/login" element={<AdminLogin />} />
+      <Route path="/kg-admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="products" element={<AdminProducts />} />
+        <Route path="orders" element={<AdminOrders />} />
+      </Route>
 
       {/* ── Fallback ── */}
       <Route path="*" element={<Navigate to="/" replace />} />
