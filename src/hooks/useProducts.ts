@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Product } from "@/components/bodyshop/ProductCard";
+import { ALL_PRODUCTS } from "@/data/bodyshopProducts";
 
 interface UseProductsOptions {
   category?: string;
@@ -30,6 +31,16 @@ function mapRow(row: Record<string, unknown>): Product {
   };
 }
 
+// Filter static data the same way the API would
+function filterStatic(products: Product[], options: UseProductsOptions): Product[] {
+  let result = [...products];
+  if (options.slug) return result.filter((p) => p.slug === options.slug);
+  if (options.category) result = result.filter((p) => p.category.toLowerCase() === options.category!.toLowerCase());
+  if (options.badge) result = result.filter((p) => p.badge === options.badge);
+  if (options.featured) result = result.filter((p) => p.badge === "NEW");
+  return result;
+}
+
 export function useProducts(options: UseProductsOptions = {}): UseProductsResult {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +59,10 @@ export function useProducts(options: UseProductsOptions = {}): UseProductsResult
         return r.json();
       })
       .then((rows) => setProducts(rows.map(mapRow)))
-      .catch((e) => setError(e.message))
+      .catch(() => {
+        // API unavailable (local dev without vercel dev) — fall back to static data
+        setProducts(filterStatic(ALL_PRODUCTS, options));
+      })
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.category, options.badge, options.featured, options.slug]);
