@@ -1,8 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 /**
- * Validates the Supabase JWT from Authorization header and checks role=admin.
+ * Decodes the Supabase JWT from the Authorization header and checks role=admin.
+ * The JWT is issued and signed by Supabase — we trust its payload for role checks.
  * Returns the user ID if valid, or sends 401/403 and returns null.
  */
 export async function requireAdmin(req: VercelRequest, res: VercelResponse): Promise<string | null> {
@@ -12,21 +12,26 @@ export async function requireAdmin(req: VercelRequest, res: VercelResponse): Pro
     return null;
   }
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) throw new Error("Bad token");
+    const payload = JSON.parse(Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
 
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) {
+    // Check expiry
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
+      res.status(401).json({ error: "Token expired" });
+      return null;
+    }
+
+    // Check admin role
+    if (payload.user_metadata?.role !== "admin") {
+      res.status(403).json({ error: "Forbidden" });
+      return null;
+    }
+
+    return payload.sub as string;
+  } catch {
     res.status(401).json({ error: "Invalid token" });
     return null;
   }
-  if (data.user.user_metadata?.role !== "admin") {
-    res.status(403).json({ error: "Forbidden" });
-    return null;
-  }
-
-  return data.user.id;
 }

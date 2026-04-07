@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { requireAdmin } from "./_adminAuth";
+import { requireAdmin } from "./_adminAuth.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userId = await requireAdmin(req, res);
