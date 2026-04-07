@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import AccountSidebar from "@/components/account/AccountSidebar";
+import { useAuth } from "@/context/AuthContext";
 
 const MOCK_ORDERS = [
   { id: "TBS-2026-04817", date: "April 1, 2026", total: "$590.00", status: "Delivered", items: 2 },
@@ -31,14 +32,17 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function AccountDashboard() {
+  const { user } = useAuth();
+  const firstName = (user?.user_metadata?.first_name as string) ?? user?.email?.split("@")[0] ?? "there";
+
   return (
-    <div style={{ padding: "40px 80px 40px" }}>
+    <div className="px-4 py-10 md:px-[80px]">
       {/* Heading */}
       <div className="flex flex-col gap-2 mb-8">
         <h1 className="font-serif text-bodyshop-charcoal tracking-[0.1em]" style={{ fontSize: "32px" }}>
           MY ACCOUNT
         </h1>
-        <p className="font-sans text-[#888]" style={{ fontSize: "14px" }}>Welcome back, Sarah</p>
+        <p className="font-sans text-[#888]" style={{ fontSize: "14px" }}>Welcome back, {firstName}</p>
       </div>
 
       {/* Two columns */}

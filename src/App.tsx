@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 // Landing
 import LandingPage from "@/pages/landing/LandingPage";
+import ComingSoon from "@/pages/landing/ComingSoon";
+
+const COMING_SOON = import.meta.env.VITE_COMING_SOON === "true";
 
 // Couture pages
 import CoutureLayout from "@/pages/couture/CoutureLayout";
@@ -36,6 +39,7 @@ import AccountLayout from "@/pages/account/AccountLayout";
 import AccountDashboard from "@/pages/account/AccountDashboard";
 import AccountOrders from "@/pages/account/AccountOrders";
 import AccountAddresses from "@/pages/account/AccountAddresses";
+import AccountDetails from "@/pages/account/AccountDetails";
 
 // Auth pages
 import Login from "@/pages/auth/Login";
@@ -48,7 +52,7 @@ export default function App() {
   return (
     <Routes>
       {/* ── Landing ── */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={COMING_SOON ? <ComingSoon /> : <LandingPage />} />
 
       {/* ── Kootis Couture ── */}
       <Route path="/kootis-couture" element={<CoutureLayout />}>
@@ -81,6 +85,7 @@ export default function App() {
         <Route index element={<AccountDashboard />} />
         <Route path="orders" element={<AccountOrders />} />
         <Route path="addresses" element={<AccountAddresses />} />
+        <Route path="details" element={<AccountDetails />} />
       </Route>
 
       {/* ── Body Shop checkout (own minimal header, outside layout) ── */}
