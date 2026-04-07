@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, ShoppingBag } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, User, LogOut } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
+import { useAuth } from "@/context/AuthContext";
 
 const navLinks = [
   { label: "New", href: "/the-body-shop/new", key: "new" },
@@ -51,6 +52,20 @@ export default function BodyShopHeader({
 }: Omit<BodyShopHeaderProps, "cartItemCount" | "onCartClick">) {
   const cartItemCount = useCartStore((s) => s.totalItems());
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [accountOpen]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -149,6 +164,54 @@ export default function BodyShopHeader({
           >
             <Search size={20} />
           </button>
+
+          {/* Account */}
+          <div className="relative" ref={accountRef}>
+            {user ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setAccountOpen((o) => !o)}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-bodyshop-blush text-white font-sans font-bold hover:bg-bodyshop-blush-dark transition cursor-pointer"
+                  style={{ fontSize: "13px" }}
+                  aria-label="Account"
+                >
+                  {(user.user_metadata?.first_name as string)?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "U"}
+                </button>
+                {accountOpen && (
+                  <div className="absolute right-0 top-full mt-2 bg-white border border-[#E0D5D5] shadow-lg z-50 min-w-[180px] rounded">
+                    <div className="px-4 py-3 border-b border-[#F0F0F0]">
+                      <p className="font-sans font-semibold text-bodyshop-charcoal truncate" style={{ fontSize: "13px" }}>
+                        {(user.user_metadata?.first_name as string) ?? user.email?.split("@")[0]}
+                      </p>
+                      <p className="font-sans text-[#999] truncate" style={{ fontSize: "11px" }}>{user.email}</p>
+                    </div>
+                    <Link to="/account" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 px-4 py-3 font-sans text-[13px] text-[#555] hover:bg-[#FDF6F6] hover:text-bodyshop-blush transition">
+                      <User size={14} /> My Account
+                    </Link>
+                    <Link to="/account/orders" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 px-4 py-3 font-sans text-[13px] text-[#555] hover:bg-[#FDF6F6] hover:text-bodyshop-blush transition">
+                      My Orders
+                    </Link>
+                    <button
+                      onClick={async () => { setAccountOpen(false); await signOut(); navigate("/login"); }}
+                      className="flex items-center gap-2 w-full text-left px-4 py-3 font-sans text-[13px] text-[#555] hover:bg-red-50 hover:text-red-400 transition border-t border-[#F0F0F0]"
+                    >
+                      <LogOut size={14} /> Sign Out
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="text-bodyshop-charcoal hover:text-bodyshop-blush transition cursor-pointer"
+                aria-label="Sign in"
+              >
+                <User size={20} />
+              </button>
+            )}
+          </div>
 
           {/* Cart */}
           <button
@@ -262,15 +325,62 @@ export default function BodyShopHeader({
             </Link>
           ))}
 
-          {/* SALE link at bottom */}
+          {/* SALE link */}
           <Link
             to="/the-body-shop/sale"
             onClick={closeDrawer}
-            className="block text-lg py-4 text-bodyshop-blush font-bold font-sans"
+            className="block text-lg py-4 border-b border-shared-grey-light text-bodyshop-blush font-bold font-sans"
           >
             SALE
           </Link>
+
+          {/* Account section */}
+          {user ? (
+            <>
+              <Link to="/account" onClick={closeDrawer} className="block text-lg py-4 border-b border-shared-grey-light font-sans text-bodyshop-charcoal hover:text-bodyshop-blush transition">
+                My Account
+              </Link>
+              <Link to="/account/orders" onClick={closeDrawer} className="block text-lg py-4 border-b border-shared-grey-light font-sans text-bodyshop-charcoal hover:text-bodyshop-blush transition">
+                My Orders
+              </Link>
+              <button
+                onClick={async () => { closeDrawer(); await signOut(); navigate("/login"); }}
+                className="block w-full text-left text-lg py-4 font-sans text-red-400 hover:text-red-500 transition"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <Link to="/login" onClick={closeDrawer} className="block text-lg py-4 font-sans font-semibold text-bodyshop-blush hover:text-bodyshop-blush-dark transition">
+              Sign In / Register
+            </Link>
+          )}
         </nav>
+
+        {/* Mobile cart + search row */}
+        <div className="flex items-center gap-6 px-4 py-4 border-t border-shared-grey-light">
+          <button
+            type="button"
+            onClick={() => { closeDrawer(); navigate("/the-body-shop/search"); }}
+            className="flex items-center gap-2 font-sans text-bodyshop-charcoal"
+            style={{ fontSize: "14px" }}
+          >
+            <Search size={18} /> Search
+          </button>
+          <button
+            type="button"
+            onClick={() => { closeDrawer(); navigate("/the-body-shop/cart"); }}
+            className="flex items-center gap-2 font-sans text-bodyshop-charcoal relative"
+            style={{ fontSize: "14px" }}
+          >
+            <ShoppingBag size={18} /> Cart
+            {cartItemCount > 0 && (
+              <span className="flex items-center justify-center w-4 h-4 rounded-full bg-bodyshop-blush text-white text-[10px] font-semibold">
+                {cartItemCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </header>
   );
