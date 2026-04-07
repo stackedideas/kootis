@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Plus, Pencil, Trash2, X, Upload, Loader2, ToggleLeft, ToggleRight } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Plus, Pencil, Trash2, X, Upload, Loader2, ToggleLeft, ToggleRight, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { adminFetch } from "@/lib/adminFetch";
 
@@ -65,7 +65,21 @@ export default function AdminProducts() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStock, setFilterStock] = useState<"all" | "in" | "out">("all");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return products.filter((p) => {
+      if (q && !p.name.toLowerCase().includes(q) && !p.slug.toLowerCase().includes(q)) return false;
+      if (filterCategory && p.category !== filterCategory) return false;
+      if (filterStock === "in" && !p.in_stock) return false;
+      if (filterStock === "out" && p.in_stock) return false;
+      return true;
+    });
+  }, [products, search, filterCategory, filterStock]);
 
   useEffect(() => { fetchProducts(); }, []);
 
@@ -190,7 +204,9 @@ export default function AdminProducts() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-white" style={{ fontSize: "28px" }}>Products</h1>
-          <p className="font-sans text-white/40 mt-1" style={{ fontSize: "13px" }}>{products.length} products total</p>
+          <p className="font-sans text-white/40 mt-1" style={{ fontSize: "13px" }}>
+            {filtered.length}{filtered.length !== products.length ? ` of ${products.length}` : ""} products
+          </p>
         </div>
         <button
           onClick={openAdd}
@@ -201,11 +217,55 @@ export default function AdminProducts() {
         </button>
       </div>
 
+      {/* Search + Filter bar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or slug..."
+            className="w-full h-10 pl-9 pr-4 bg-[#1A1A1A] border border-white/10 rounded-lg font-sans text-white placeholder:text-white/20 focus:outline-none focus:border-[#C9A96E] transition text-[13px]"
+          />
+        </div>
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="h-10 px-3 bg-[#1A1A1A] border border-white/10 rounded-lg font-sans text-white focus:outline-none focus:border-[#C9A96E] transition text-[13px]"
+        >
+          <option value="">All Categories</option>
+          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select
+          value={filterStock}
+          onChange={(e) => setFilterStock(e.target.value as "all" | "in" | "out")}
+          className="h-10 px-3 bg-[#1A1A1A] border border-white/10 rounded-lg font-sans text-white focus:outline-none focus:border-[#C9A96E] transition text-[13px]"
+        >
+          <option value="all">All Stock</option>
+          <option value="in">In Stock</option>
+          <option value="out">Out of Stock</option>
+        </select>
+        {(search || filterCategory || filterStock !== "all") && (
+          <button
+            onClick={() => { setSearch(""); setFilterCategory(""); setFilterStock("all"); }}
+            className="h-10 px-4 border border-white/10 rounded-lg font-sans text-white/40 hover:text-white hover:border-white/30 transition text-[13px] shrink-0"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       {/* Table */}
       <div className="bg-[#1A1A1A] rounded-xl border border-white/10 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-[#C9A96E] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="font-sans text-white/30" style={{ fontSize: "14px" }}>
+              {products.length === 0 ? "No products yet." : "No products match your search."}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -218,7 +278,7 @@ export default function AdminProducts() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((p) => (
+                {filtered.map((p) => (
                   <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition">
                     <td className="px-4 py-3">
                       <div className="w-12 h-12 rounded overflow-hidden bg-white/10 shrink-0">
