@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Truck } from "lucide-react";
 import CategoryPage from "@/components/bodyshop/CategoryPage";
-import { ALL_PRODUCTS } from "@/data/bodyshopProducts";
+import { useProducts } from "@/hooks/useProducts";
 
 const FILTERS = ["All New", "Shoes", "Handbags", "Watches", "Accessories"];
 
@@ -10,7 +10,6 @@ const HERO_IMG =
 
 const hero = (
   <section className="flex flex-col md:flex-row" style={{ minHeight: "320px" }}>
-    {/* Left */}
     <div className="flex flex-col justify-center gap-5 bg-[#333333] px-8 py-10 md:px-10 md:py-0 md:w-1/2">
       <span
         className="font-serif font-light text-white tracking-[0.3em] md:tracking-[0.5em]"
@@ -30,7 +29,6 @@ const hero = (
         Shop Now
       </Link>
     </div>
-    {/* Right */}
     <div
       className="flex-1 overflow-hidden"
       style={{
@@ -44,10 +42,7 @@ const hero = (
 );
 
 const promoBanner = (
-  <div
-    className="flex items-center justify-center gap-3 bg-bodyshop-blush text-white"
-    style={{ height: "72px" }}
-  >
+  <div className="flex items-center justify-center gap-3 bg-bodyshop-blush text-white" style={{ height: "72px" }}>
     <Truck size={22} />
     <span className="font-sans font-medium tracking-[0.05em]" style={{ fontSize: "16px" }}>
       Free Delivery on Orders Over $500 TTD
@@ -55,12 +50,31 @@ const promoBanner = (
   </div>
 );
 
+const SHOE_CATS = ["Heels", "Flats", "Boots", "Sandals", "Sneakers"];
+const BAG_CATS = ["Totes", "Clutches", "Crossbody", "Satchels"];
+const WATCH_CATS = ["Luxury", "Sport", "Casual"];
+const ACC_CATS = ["Scarves", "Belts", "Jewellery", "Eyewear"];
+
 export default function BodyShopNewArrivals() {
+  const { products, loading, error } = useProducts();
+
+  function filterByTab(tab: string) {
+    if (tab === "All New") return products;
+    if (tab === "Shoes") return products.filter((p) => SHOE_CATS.includes(p.category));
+    if (tab === "Handbags") return products.filter((p) => BAG_CATS.includes(p.category));
+    if (tab === "Watches") return products.filter((p) => WATCH_CATS.includes(p.category));
+    if (tab === "Accessories") return products.filter((p) => ACC_CATS.includes(p.category));
+    return products;
+  }
+
   return (
     <CategoryPage
       hero={hero}
       filters={FILTERS}
-      products={ALL_PRODUCTS}
+      products={products}
+      filterFn={filterByTab}
+      loading={loading}
+      error={error}
       midBanner={promoBanner}
     />
   );

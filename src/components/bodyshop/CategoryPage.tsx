@@ -9,19 +9,52 @@ interface CategoryPageProps {
   hero: ReactNode;
   filters: string[];
   products: Product[];
-  /** Optional strip rendered between grid and pagination (e.g. promo banner, urgency strip) */
+  loading?: boolean;
+  error?: string | null;
+  /** Custom filter function — if omitted, falls back to category matching */
+  filterFn?: (activeFilter: string, products: Product[]) => Product[];
+  /** Optional strip rendered between grid and pagination */
   midBanner?: ReactNode;
 }
 
-export default function CategoryPage({ hero, filters, products, midBanner }: CategoryPageProps) {
+function SkeletonCard() {
+  return (
+    <div className="flex flex-col animate-pulse">
+      <div className="bg-[#F0F0F0] w-full" style={{ height: "320px" }} />
+      <div className="flex flex-col gap-2 pt-3 px-1">
+        <div className="h-3 bg-[#F0F0F0] rounded w-1/3" />
+        <div className="h-4 bg-[#F0F0F0] rounded w-2/3" />
+        <div className="h-4 bg-[#F0F0F0] rounded w-1/4" />
+      </div>
+    </div>
+  );
+}
+
+function sortProducts(products: Product[], sortLabel: string): Product[] {
+  const p = [...products];
+  if (sortLabel === "Price: Low to High") return p.sort((a, b) => (a.salePrice ?? a.price) - (b.salePrice ?? b.price));
+  if (sortLabel === "Price: High to Low") return p.sort((a, b) => (b.salePrice ?? b.price) - (a.salePrice ?? a.price));
+  if (sortLabel === "Best Deals") return p.sort((a, b) => (b.discountPct ?? 0) - (a.discountPct ?? 0));
+  return p; // Newest — already ordered by created_at DESC from DB
+}
+
+export default function CategoryPage({
+  hero, filters, products, loading, error, filterFn, midBanner,
+}: CategoryPageProps) {
   const [activeFilter, setActiveFilter] = useState(filters[0]);
   const [sortLabel, setSortLabel] = useState("Newest");
   const [sortOpen, setSortOpen] = useState(false);
   const [page, setPage] = useState(1);
 
-  const filtered = activeFilter === filters[0]
-    ? products
-    : products.filter((p) => p.category.toLowerCase() === activeFilter.toLowerCase());
+  const defaultFilterFn = (active: string, prods: Product[]) =>
+    active === filters[0]
+      ? prods
+      : prods.filter((p) => p.category.toLowerCase() === active.toLowerCase());
+
+  const filtered = sortProducts(
+    (filterFn ?? defaultFilterFn)(activeFilter, products),
+    sortLabel
+  );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageProducts = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -33,12 +66,11 @@ export default function CategoryPage({ hero, filters, products, midBanner }: Cat
 
   return (
     <div className="flex flex-col">
-      {/* ── Hero slot ── */}
+      {/* ── Hero ── */}
       {hero}
 
       {/* ── Filter / Sort bar ── */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white border-b border-[#F0F0F0] px-4 py-4 md:px-[60px]">
-        {/* Pills — scroll horizontally on mobile */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 md:flex-wrap">
           {filters.map((f) => (
             <button
@@ -59,12 +91,10 @@ export default function CategoryPage({ hero, filters, products, midBanner }: Cat
           ))}
         </div>
 
-        {/* Sort + count row */}
         <div className="flex items-center justify-between md:justify-end gap-4 shrink-0">
           <span className="font-sans text-[#999999]" style={{ fontSize: "12px" }}>
-            {filtered.length} results
+            {loading ? "Loading..." : `${filtered.length} results`}
           </span>
-
           <div className="relative">
             <button
               className="flex items-center gap-2 font-sans text-[#666666] border border-[#E0D5D5] rounded"
@@ -93,7 +123,17 @@ export default function CategoryPage({ hero, filters, products, midBanner }: Cat
 
       {/* ── Product grid ── */}
       <div className="flex flex-col gap-8 px-4 py-10 md:px-[60px] md:py-12">
-        {pageProducts.length > 0 ? (
+        {error ? (
+          <div className="py-20 text-center">
+            <p className="font-sans text-[#AAAAAA]" style={{ fontSize: "14px" }}>
+              Unable to load products. Please try again later.
+            </p>
+          </div>
+        ) : loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : pageProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
             {pageProducts.map((p) => (
               <ProductCard key={p.id} product={p} />

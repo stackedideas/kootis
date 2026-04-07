@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import CategoryPage from "@/components/bodyshop/CategoryPage";
-import { SALE_PRODUCTS } from "@/data/bodyshopProducts";
+import { useProducts } from "@/hooks/useProducts";
 
 const FILTERS = ["All Sale", "Shoes", "Handbags", "Accessories", "Watches"];
 
@@ -94,11 +94,14 @@ const urgencyStrip = (
 );
 
 export default function BodyShopSale() {
+  const { products, loading, error } = useProducts({ badge: "SALE" });
   return (
     <CategoryPage
       hero={<SaleHero />}
       filters={FILTERS}
-      products={SALE_PRODUCTS}
+      products={products}
+      loading={loading}
+      error={error}
       midBanner={urgencyStrip}
     />
   );

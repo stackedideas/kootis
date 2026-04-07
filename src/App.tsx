@@ -39,6 +39,7 @@ import AccountLayout from "@/pages/account/AccountLayout";
 import AccountDashboard from "@/pages/account/AccountDashboard";
 import AccountOrders from "@/pages/account/AccountOrders";
 import AccountAddresses from "@/pages/account/AccountAddresses";
+import AccountDetails from "@/pages/account/AccountDetails";
 
 // Auth pages
 import Login from "@/pages/auth/Login";
@@ -84,6 +85,7 @@ export default function App() {
         <Route index element={<AccountDashboard />} />
         <Route path="orders" element={<AccountOrders />} />
         <Route path="addresses" element={<AccountAddresses />} />
+        <Route path="details" element={<AccountDetails />} />
       </Route>
 
       {/* ── Body Shop checkout (own minimal header, outside layout) ── */}
